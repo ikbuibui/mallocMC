@@ -34,8 +34,9 @@
 
 #pragma once
 
+#include "detail/alpaka3_compat.hpp"
+
 #include <alpaka/alpaka.hpp>
-#include <alpaka/core/Common.hpp>
 
 #include <sys/types.h>
 
@@ -56,19 +57,8 @@
 
 namespace mallocMC
 {
-
-    /** Get the number of threads in a warp.
-     *
-     * @attention If alpaka does not know the compile time warp size zero will be returned.
-     *
-     * @return number of threads in a warp, for unknown devices it will return zero.
-     */
     template<typename TAcc>
-    consteval uint32_t getWarpSize()
-    {
-        constexpr auto warpSize = alpaka::warp::getSizeCompileTime<TAcc>();
-        return warpSize;
-    }
+    constexpr uint32_t warpSize = TAcc::getWarpSize();
 
     ALPAKA_FN_ACC inline auto laneid()
     {
@@ -93,77 +83,46 @@ namespace mallocMC
     template<typename TAcc>
     ALPAKA_FN_ACC inline auto warpid(TAcc const& /*acc*/) -> uint32_t
     {
-        return 0U;
-    }
-
-#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-    template<typename TDim, typename TIdx>
-    // ALPAKA_FN_ACC resolves to `__host__ __device__` if we're not in CUDA_ONLY_MODE. But the assembly instruction is
-    // specific to the device and cannot be compiled on the host. So, we need an explicit `__device__` here.`
-    inline __device__ auto warpid(alpaka::AccGpuCudaRt<TDim, TIdx> const& /*acc*/) -> uint32_t
-    {
+#if defined(__CUDA_ARCH__)
         std::uint32_t mywarpid = 0;
         asm("mov.u32 %0, %%warpid;" : "=r"(mywarpid));
         return mywarpid;
-    }
-#endif
-
-#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
-    template<typename TDim, typename TIdx>
-    ALPAKA_FN_ACC inline auto warpid(alpaka::AccGpuHipRt<TDim, TIdx> const& /*acc*/) -> uint32_t
-    {
+#elif defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__)
         // get wave id
         // https://github.com/ROCm-Developer-Tools/HIP/blob/f72a669487dd352e45321c4b3038f8fe2365c236/include/hip/hcc_detail/device_functions.h#L974-L1024
         return __builtin_amdgcn_s_getreg(GETREG_IMMED(3, 0, 4));
-    }
+#else
+        return 0U;
 #endif
+    }
 
     template<typename TAcc>
     ALPAKA_FN_ACC inline auto smid(TAcc const& /*acc*/) -> uint32_t
     {
-        return 0U;
-    }
-
-#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-    template<typename TDim, typename TIdx>
-    inline __device__ auto smid(alpaka::AccGpuCudaRt<TDim, TIdx> const& /*acc*/) -> uint32_t
-    {
+#if defined(__CUDA_ARCH__)
         std::uint32_t mysmid = 0;
         asm("mov.u32 %0, %%smid;" : "=r"(mysmid));
         return mysmid;
-    }
-#endif
-
-#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
-    template<typename TDim, typename TIdx>
-    ALPAKA_FN_ACC inline auto smid(alpaka::AccGpuHipRt<TDim, TIdx> const& /*acc*/) -> uint32_t
-    {
+#elif defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__)
         return __smid();
-    }
+#else
+        return 0U;
 #endif
+    }
 
     template<typename TAcc>
     ALPAKA_FN_ACC inline auto lanemask_lt(TAcc const& /*acc*/)
     {
-        return 0U;
-    }
-#ifdef ALPAKA_ACC_GPU_CUDA_ENABLED
-    template<typename TDim, typename TIdx>
-    inline __device__ uint32_t lanemask_lt(alpaka::AccGpuCudaRt<TDim, TIdx> const& /*acc*/)
-    {
+#if defined(__CUDA_ARCH__)
         std::uint32_t lanemask;
         asm("mov.u32 %0, %%lanemask_lt;" : "=r"(lanemask));
         return lanemask;
-    }
-#endif
-
-#ifdef ALPAKA_ACC_GPU_HIP_ENABLED
-    template<typename TDim, typename TIdx>
-    ALPAKA_FN_ACC inline auto lanemask_lt(alpaka::AccGpuHipRt<TDim, TIdx> const& /*acc*/)
-    {
+#elif defined(__HIP_DEVICE_COMPILE__) && defined(__HIP__)
         return __lanemask_lt();
-    }
+#else
+        return 0U;
 #endif
+    }
 
 
     /** the maximal number threads per block, valid for sm_2.X - sm_7.5
@@ -182,10 +141,10 @@ namespace mallocMC
     template<typename AlpakaAcc>
     ALPAKA_FN_ACC inline auto warpid_withinblock(AlpakaAcc const& acc) -> std::uint32_t
     {
-        auto const localId = alpaka::mapIdx<1>(
-            alpaka::getIdx<alpaka::Block, alpaka::Threads>(acc),
-            alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc))[0];
-        return localId / getWarpSize<AlpakaAcc>();
+        auto const localId = alpaka::linearize(
+            acc.getExtentsOf(alpaka::onAcc::origin::block, alpaka::onAcc::unit::threads),
+            acc.getIdxWithin(alpaka::onAcc::origin::block, alpaka::onAcc::unit::threads));
+        return localId / warpSize<AlpakaAcc>;
     }
 
     template<typename T, typename U, typename = std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>>
