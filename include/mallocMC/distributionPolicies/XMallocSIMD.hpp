@@ -38,7 +38,6 @@
 #include "XMallocSIMD.hpp"
 
 #include <alpaka/alpaka.hpp>
-#include <alpaka/alpaka.hpp>
 
 #include <cstdint>
 #include <limits>
@@ -142,7 +141,8 @@ namespace mallocMC
 #endif
                 if(coalescible && threadcount > 1)
                 {
-                    myoffset = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAdd>(acc, &warp_sizecounter[warpid], bytes);
+                    myoffset
+                        = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAdd>(acc, &warp_sizecounter[warpid], bytes);
                     can_use_coalescing = true;
                 }
 
