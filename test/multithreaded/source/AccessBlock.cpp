@@ -230,7 +230,7 @@ auto createPointers(auto const& devHost, auto const& devAcc, auto& queue, uint32
 
 auto setup(auto const& cfg)
 {
-    auto const deviceSpec = cfg[alpaka::object::deviceSpec];
+    auto const deviceSpec = alpaka::onHost::makeDeviceSpec(cfg);
     auto selector = alpaka::onHost::makeDeviceSelector(deviceSpec);
     using Device = std::remove_cvref_t<decltype(selector.makeDevice(0))>;
     using Queue = std::remove_cvref_t<decltype(std::declval<Device&>().makeQueue(alpaka::queueKind::blocking))>;
@@ -556,7 +556,7 @@ auto customExec(auto& queue, auto const& devAcc, auto const numElements, auto...
 TEMPLATE_LIST_TEST_CASE("Threaded AccessBlock", "", EnabledBackends)
 {
     auto cfg = TestType::makeDict();
-    auto const deviceSpec = cfg[alpaka::object::deviceSpec];
+    auto const deviceSpec = alpaka::onHost::makeDeviceSpec(cfg);
     auto const exec = cfg[alpaka::object::exec];
     auto ctx = setup(cfg);
     if(!ctx)

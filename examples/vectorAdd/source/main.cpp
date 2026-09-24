@@ -160,20 +160,20 @@ auto main() -> int
 {
     int result = EXIT_SUCCESS;
     alpaka::onHost::executeForEachIfHasDevice(
-        [&](auto const& backend)
+        [&](auto const& backend) -> int
         {
-            auto const deviceSpec = backend[alpaka::object::deviceSpec];
+            auto const deviceSpec = alpaka::onHost::makeDeviceSpec(backend);
             auto const exec = backend[alpaka::object::exec];
             using Executor = std::decay_t<decltype(exec)>;
             if(result != EXIT_SUCCESS)
-                return;
+                return result;
 
             result = runExample<
                 Executor,
                 FlatterScatter<FlatterScatterHeapConfig>,
                 mallocMC::ReservePoolPolicies::AlpakaBuf>(deviceSpec, exec);
             if(result != EXIT_SUCCESS)
-                return;
+                return result;
             result = runExample<Executor, Scatter<FlatterScatterHeapConfig>, mallocMC::ReservePoolPolicies::AlpakaBuf>(
                 deviceSpec,
                 exec);
@@ -191,6 +191,7 @@ auto main() -> int
 #endif
             if(result == EXIT_SUCCESS)
                 result = runExample<Executor, OldMalloc, mallocMC::ReservePoolPolicies::Noop>(deviceSpec, exec);
+            return result;
         },
         alpaka::onHost::allBackends(alpaka::onHost::enabledDeviceSpecs, alpaka::exec::enabledExecutors));
     return result;

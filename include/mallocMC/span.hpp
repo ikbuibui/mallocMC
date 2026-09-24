@@ -43,6 +43,9 @@
 // error: reference to __host__ function '__glibcxx_assert_fail' in __host__ __device__ function
 
 #pragma once
+
+#include <alpaka/alpaka.hpp>
+
 #include <cstddef>
 
 namespace mallocMC
@@ -53,37 +56,37 @@ namespace mallocMC
         TData* ptr_;
         size_t size_;
 
-        constexpr span(TData* ptr, size_t size) : ptr_(ptr), size_(size) {};
+        ALPAKA_FN_HOST_ACC constexpr span(TData* ptr, size_t size) : ptr_(ptr), size_(size) {};
 
         // This is explicitly NOT `explcit` because we want to be able to
         // silently wrap an array into a span within other constructor calls.
         template<size_t N>
-        constexpr span(TData (&arr)[N]) : ptr_(arr)
+        ALPAKA_FN_HOST_ACC constexpr span(TData (&arr)[N]) : ptr_(arr)
                                         , size_(N)
         {
         }
 
-        [[nodiscard]] constexpr auto size() const -> size_t
+        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto size() const -> size_t
         {
             return size_;
         }
 
-        [[nodiscard]] constexpr auto operator[](size_t index) const -> decltype(auto)
+        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto operator[](size_t index) const -> decltype(auto)
         {
             return ptr_[index];
         }
 
-        [[nodiscard]] constexpr auto data() const -> decltype(auto)
+        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto data() const -> decltype(auto)
         {
             return ptr_;
         }
 
-        [[nodiscard]] constexpr auto begin() const -> decltype(auto)
+        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto begin() const -> decltype(auto)
         {
             return ptr_;
         }
 
-        [[nodiscard]] constexpr auto end() const -> decltype(auto)
+        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto end() const -> decltype(auto)
         {
             return &(ptr_[size_]);
         }

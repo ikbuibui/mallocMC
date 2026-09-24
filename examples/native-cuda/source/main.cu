@@ -32,7 +32,6 @@
 
 #include <cstdint>
 #include <cstdlib>
-#include <functional>
 
 /**
  * @brief Computes the sum of squares of the first `n` natural numbers.
@@ -76,10 +75,13 @@ __global__ void oneDotProductPerThread(mallocMC::CudaMemoryManager<> memoryManag
     auto b
         = span<uint64_t>(reinterpret_cast<uint64_t*>(memoryManager.malloc(numValues * sizeof(uint64_t))), numValues);
 
-    std::iota(std::begin(a), std::end(a), tid);
-    std::iota(std::begin(b), std::end(b), tid);
-
-    uint64_t result = std::transform_reduce(std::cbegin(a), std::cend(a), std::cbegin(b), 0U);
+    uint64_t result = 0U;
+    for(uint64_t index = 0U; index < numValues; ++index)
+    {
+        a[index] = tid + index;
+        b[index] = tid + index;
+        result += a[index] * b[index];
+    }
 
     auto expected = sumOfSquares(numValues + tid - 1) - (tid > 0 ? sumOfSquares(tid - 1) : 0);
     if(result != expected)

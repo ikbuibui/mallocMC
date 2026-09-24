@@ -410,12 +410,12 @@ namespace mallocMC::CreationPolicies
             auto numBlocks = MyHeap::numBlocks(memsize);
             if(numBlocks == 0U)
             {
-                // This is not just an optimisation. The call to `getValidWorkDiv` below really dislikes the 0 extent
-                // that we'd give it, so better stop here to not run into division by zero.
+                //  This is not just an optimisation. Frame-spec construction below does not support a zero extent,
+                // so stop here to avoid division by zero.
                 return;
             }
             auto numPagesPerBlock = MyHeap::MyAccessBlock::numPages();
-            auto frameSpec = alpaka::onHost::getFrameSpec<uint32_t>(
+            auto frameSpec = alpaka::onHost::getSimdFrameSpec<uint32_t>(
                 queue.getDevice(),
                 TExecutor{},
                 alpaka::Vec{numBlocks, numPagesPerBlock});

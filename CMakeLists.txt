@@ -26,7 +26,7 @@ if (mallocMC_BUILD_TESTING OR mallocMC_BUILD_EXAMPLES)
   enable_testing()
 endif()
 if (mallocMC_BUILD_TESTING)
-  set(alpaka_ACC_CPU_B_SEQ_T_SEQ_ENABLE ON CACHE BOOL "" FORCE)
+  set(alpaka_EXEC_CpuSerial ON CACHE BOOL "" FORCE)
 endif()
 
 # ---- Add dependencies via CPM ----
@@ -48,7 +48,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
 
-if(alpaka_ACC_GPU_CUDA_ENABLE)
+if(alpaka_DEP_CUDA)
   add_controlled("Gallatin")
 
   if (TARGET gallatin::gallatin)

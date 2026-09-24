@@ -142,7 +142,7 @@ namespace mallocMC
                 if(coalescible && threadcount > 1)
                 {
                     myoffset
-                        = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAdd>(acc, &warp_sizecounter[warpid], bytes);
+                        = alpaka::onAcc::atomicOp<alpaka::operation::Add>(acc, &warp_sizecounter[warpid], bytes);
                     can_use_coalescing = true;
                 }
 

@@ -13,7 +13,7 @@ add_subdirectory(
 )
 
 check_language(CUDA)
-if (CMAKE_CUDA_COMPILER AND alpaka_ACC_GPU_CUDA_ENABLE)
+if (CMAKE_CUDA_COMPILER AND alpaka_DEP_CUDA)
   add_subdirectory(
     ${CMAKE_CURRENT_LIST_DIR}/native-cuda
     ${CMAKE_BINARY_DIR}/examples/native-cuda

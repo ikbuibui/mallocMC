@@ -348,7 +348,7 @@ namespace mallocMC
                 for(;;)
                 {
                     uint32 const mask = 1u << spot;
-                    uint32 const old = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicOr>(acc, bitfield, mask);
+                    uint32 const old = alpaka::onAcc::atomicOp<alpaka::operation::Or>(acc, bitfield, mask);
                     if((old & mask) == 0)
                         return spot;
                     // note: popc(old) == spots should be sufficient,
@@ -424,7 +424,7 @@ namespace mallocMC
                     int const hspot = usespot(acc, &onpagemasks[spot], spot < fullsegments ? 32 : additional_chunks);
                     if(hspot != -1)
                         return _page[page].data + (32 * spot + hspot) * chunksize;
-                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicOr>(acc, (uint32*) &_ptes[page].bitmask, 1u << spot);
+                    alpaka::onAcc::atomicOp<alpaka::operation::Or>(acc, (uint32*) &_ptes[page].bitmask, 1u << spot);
                     spot = nextspot(acc, mask, spot, segments);
                 }
                 return 0;
@@ -472,7 +472,7 @@ namespace mallocMC
 
                 // increse the fill level
                 uint32 const filllevel
-                    = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAdd>(acc, (uint32*) &(_ptes[page].count), 1u);
+                    = alpaka::onAcc::atomicOp<alpaka::operation::Add>(acc, (uint32*) &(_ptes[page].count), 1u);
 
                 // if resetfreedpages == false we do not need to re-check chunksize
                 bool tryAllocMem = !resetfreedpages;
@@ -488,7 +488,7 @@ namespace mallocMC
                          * In case the page is now free (chunksize == 0) we acquire the new chunk size.
                          * In cases where the page has already a chunksize we test if the chunksize fits our needs.
                          */
-                        uint32 const oldChunksize = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                        uint32 const oldChunksize = alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                             acc,
                             (uint32*) &_ptes[page].chunksize,
                             0u,
@@ -531,7 +531,7 @@ namespace mallocMC
                 if(chunk_ptr == nullptr)
                 {
                     uint32_t oldFillLevel
-                        = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicSub>(acc, (uint32*) &(_ptes[page].count), 1u);
+                        = alpaka::onAcc::atomicOp<alpaka::operation::Sub>(acc, (uint32*) &(_ptes[page].count), 1u);
                     if(oldFillLevel == 1u)
                     {
                         // chunksize guaranteed to hold the chunksize
@@ -604,7 +604,7 @@ namespace mallocMC
                             {
                                 // Set the chunk size to our needs. If the old chunk size is not zero we check if we
                                 // can still use the chunk even if memory is waisted.
-                                uint32 beforeChunkSize = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                                uint32 beforeChunkSize = alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                                     acc,
                                     (uint32*) &_ptes[page_in_region].chunksize,
                                     0u,
@@ -633,7 +633,7 @@ namespace mallocMC
 
                             // could not alloc in region, tell that
                             if(regionfilllevel + 1 <= regionsize)
-                                alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                                alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                                     acc,
                                     (uint32*) (_regions + region),
                                     regionfilllevel,
@@ -676,7 +676,7 @@ namespace mallocMC
                      * In case it is the last allocation on the page the new pagesize will signal full and nobody else
                      * is allowed to touch the meta data anymore.
                      */
-                    auto oldfilllevel = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                    auto oldfilllevel = alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                         acc,
                         (uint32*) &_ptes[page].count,
                         0u,
@@ -684,7 +684,7 @@ namespace mallocMC
 
                     if(oldfilllevel == 0)
                     {
-                        uint32 const chunksize = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                        uint32 const chunksize = alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                             acc,
                             (uint32*) &_ptes[page].chunksize,
                             0u,
@@ -707,7 +707,7 @@ namespace mallocMC
                              * is updating the chunksize without notify the action by increasing the page count
                              * beforehand.
                              */
-                            auto oldChunkSize = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                            auto oldChunkSize = alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                                 acc,
                                 (uint32*) &_ptes[page].chunksize,
                                 chunksize,
@@ -735,7 +735,7 @@ namespace mallocMC
                          * problem because if the chunk size in tryUsaPage() is not fitting the counter is reduced an
                          * the page is marked as free.
                          */
-                        alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicSub>(acc, (uint32*) &_ptes[page].count, pageSize);
+                        alpaka::onAcc::atomicOp<alpaka::operation::Sub>(acc, (uint32*) &_ptes[page].count, pageSize);
                     }
                 }
             }
@@ -764,14 +764,14 @@ namespace mallocMC
                     uint32* onpagemasks = onPageMasksPosition(page, nMasks);
                     /* currently unchecked:
                      * uint32 old = */
-                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAnd>(
+                    alpaka::onAcc::atomicOp<alpaka::operation::And>(
                         acc,
                         &onpagemasks[segment],
                         ~(1u << withinsegment));
 
                     // always do this, since it might fail due to a
                     // race-condition with addChunkHierarchy
-                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAnd>(
+                    alpaka::onAcc::atomicOp<alpaka::operation::And>(
                         acc,
                         (uint32*) &_ptes[page].bitmask,
                         ~(1u << segment));
@@ -779,14 +779,14 @@ namespace mallocMC
                 else
                 {
                     uint32 const segment = inpage_offset / chunksize;
-                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAnd>(
+                    alpaka::onAcc::atomicOp<alpaka::operation::And>(
                         acc,
                         (uint32*) &_ptes[page].bitmask,
                         ~(1u << segment));
                 }
 
                 uint32 oldfilllevel
-                    = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicSub>(acc, (uint32*) &_ptes[page].count, 1u);
+                    = alpaka::onAcc::atomicOp<alpaka::operation::Sub>(acc, (uint32*) &_ptes[page].count, 1u);
 
                 if(oldfilllevel == 1u)
                     tryCleanPage(acc, page);
@@ -796,11 +796,11 @@ namespace mallocMC
                 if(oldfilllevel == pagesize / 2 / chunksize)
                 {
                     uint32 const region = page / regionsize;
-                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicExch>(acc, (uint32*) (_regions + region), 0u);
+                    alpaka::onAcc::atomicOp<alpaka::operation::Exch>(acc, (uint32*) (_regions + region), 0u);
                     uint32 const pagesperblock = _numpages / _accessblocks;
                     uint32 const block = page / pagesperblock;
                     if(warpid(acc) + laneid() == 0)
-                        alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicMin>(acc, (uint32*) &_firstfreeblock, block);
+                        alpaka::onAcc::atomicOp<alpaka::operation::Min>(acc, (uint32*) &_firstfreeblock, block);
                 }
             }
 
@@ -817,7 +817,7 @@ namespace mallocMC
                 uint32 abord = std::numeric_limits<uint32>::max();
                 for(uint32 trypage = startpage; trypage < startpage + pages; ++trypage)
                 {
-                    uint32 const old = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                    uint32 const old = alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                         acc,
                         (uint32*) &_ptes[trypage].chunksize,
                         0u,
@@ -831,7 +831,7 @@ namespace mallocMC
                 if(abord == std::numeric_limits<uint32>::max())
                     return true;
                 for(uint32 trypage = startpage; trypage < abord; ++trypage)
-                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                    alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                         acc,
                         (uint32*) &_ptes[trypage].chunksize,
                         bytes,
@@ -870,7 +870,7 @@ namespace mallocMC
                             {
                                 // mark that we filled up everything up to here
                                 if(!left_free)
-                                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(
+                                    alpaka::onAcc::atomicOp<alpaka::operation::Cas>(
                                         acc,
                                         (uint32*) &_firstFreePageBased,
                                         startpage,
@@ -901,7 +901,7 @@ namespace mallocMC
             ALPAKA_FN_ACC auto allocPageBasedSingle(AlpakaAcc const& acc, uint32 bytes) -> void*
             {
                 // acquire mutex
-                while(alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicExch>(acc, &_pagebasedMutex, 1u) != 0)
+                while(alpaka::onAcc::atomicOp<alpaka::operation::Exch>(acc, &_pagebasedMutex, 1u) != 0)
                     ;
                 // search for free spot from the back
                 uint32 const spage = _firstFreePageBased;
@@ -911,7 +911,7 @@ namespace mallocMC
                     res = allocPageBasedSingleRegion(acc, _numpages, spage, bytes);
 
                 // free mutex
-                alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicExch>(acc, &_pagebasedMutex, 0u);
+                alpaka::onAcc::atomicOp<alpaka::operation::Exch>(acc, &_pagebasedMutex, 0u);
                 return res;
             }
 
@@ -958,8 +958,8 @@ namespace mallocMC
                 alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seq_cst);
 
                 for(uint32 p = page; p < page + pages; ++p)
-                    alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(acc, (uint32*) &_ptes[p].chunksize, bytes, 0u);
-                alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicMax>(
+                    alpaka::onAcc::atomicOp<alpaka::operation::Cas>(acc, (uint32*) &_ptes[p].chunksize, bytes, 0u);
+                alpaka::onAcc::atomicOp<alpaka::operation::Max>(
                     acc,
                     (uint32*) &_firstFreePageBased,
                     page + pages - 1);
@@ -1018,7 +1018,7 @@ namespace mallocMC
                  * In older implementations we read the chunksize without atomics which can result in data races.
                  */
                 uint32 const chunksize
-                    = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicCas>(acc, (uint32*) &_ptes[page].chunksize, 0u, 0u);
+                    = alpaka::onAcc::atomicOp<alpaka::operation::Cas>(acc, (uint32*) &_ptes[page].chunksize, 0u, 0u);
 
                 // is the pointer the beginning of a chunk?
                 auto const inpage_offset = static_cast<uint32>((char*) mem - _page[page].data);
@@ -1029,7 +1029,7 @@ namespace mallocMC
                     uint32* counter = (uint32*) (_page[page].data + block * chunksize);
                     // coalesced mem free
 
-                    uint32 const old = alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicSub>(acc, counter, 1u);
+                    uint32 const old = alpaka::onAcc::atomicOp<alpaka::operation::Sub>(acc, counter, 1u);
                     if(old != 1)
                         return;
                     mem = (void*) counter;
@@ -1152,7 +1152,7 @@ namespace mallocMC
                         acc.getExtentsOf(alpaka::onAcc::origin::grid, alpaka::onAcc::unit::threads).product());
                     unsigned const temp = heapPtr->getAvailaibleSlotsDeviceFunction(acc, numBytes, gid, nWorker);
                     if(temp)
-                        alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAdd>(acc, slots, temp);
+                        alpaka::onAcc::atomicOp<alpaka::operation::Add>(acc, slots, temp);
                 }
             };
 
@@ -1378,7 +1378,7 @@ namespace mallocMC
                     slotSize,
                     linearizedLocalThreadIdx,
                     numThreadsInBlock);
-                alpaka::onAcc::atomicOp<alpaka::onAcc::AtomicAdd>(acc, &sharedResult, temp);
+                alpaka::onAcc::atomicOp<alpaka::operation::Add>(acc, &sharedResult, temp);
 
                 alpaka::onAcc::syncBlockThreads(acc);
                 alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Block{}, alpaka::onAcc::order::seq_cst);
