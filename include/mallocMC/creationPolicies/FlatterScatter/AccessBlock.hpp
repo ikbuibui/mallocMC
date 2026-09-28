@@ -268,7 +268,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
             // bitmask itself, if the chunk size (and thereby the extent of the bitmask) changes before we finish.
             // (The latter scenario might be excluded by other mem_fences in the code.) If a read is pending, the old
             // thread might read data from the new thread leading to inconsistent information in the first thread.
-            alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seq_cst);
+            alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seqCst);
 
             auto const index = pageIndex(pointer);
             if(index >= static_cast<int32_t>(numPages()) || index < 0)
@@ -806,7 +806,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                             alpaka::onAcc::memFence(
                                 acc,
                                 alpaka::onAcc::scope::Device{},
-                                alpaka::onAcc::order::seq_cst);
+                                alpaka::onAcc::order::seqCst);
                         }
 
                         // At this point, there might already be another thread (with another chunkSize) on this page
@@ -843,7 +843,7 @@ namespace mallocMC::CreationPolicies::FlatterScatterAlloc
                 // here again.
                 {
                     MyPageInterpretation{pages[myIndex], T_AlignmentPolicy::Properties::dataAlignment}.cleanupFull();
-                    alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seq_cst);
+                    alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seqCst);
                     alpaka::onAcc::atomicCas(acc, &pageTable.chunkSizes[myIndex], chunkSize, 0U);
                 }
                 alpaka::onAcc::atomicSub(acc, &pageTable.fillingLevels[myIndex], +pageSize);

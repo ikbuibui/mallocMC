@@ -701,7 +701,7 @@ namespace mallocMC
                             alpaka::onAcc::memFence(
                                 acc,
                                 alpaka::onAcc::scope::Device{},
-                                alpaka::onAcc::order::seq_cst);
+                                alpaka::onAcc::order::seqCst);
                             /* Remove chunk information.
                              * It is important that this call happened after page init is called because scatter malloc
                              * is updating the chunksize without notify the action by increasing the page count
@@ -955,7 +955,7 @@ namespace mallocMC
                 for(uint32 p = page; p < page + pages; ++p)
                     _page[p].init();
 
-                alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seq_cst);
+                alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seqCst);
 
                 for(uint32 p = page; p < page + pages; ++p)
                     alpaka::onAcc::atomicOp<alpaka::operation::Cas>(acc, (uint32*) &_ptes[p].chunksize, bytes, 0u);
@@ -1010,7 +1010,7 @@ namespace mallocMC
                 // before we finish. (The latter scenario might be excluded by other mem_fences in the code.) If a read
                 // is pending, the old thread might read data from the new thread leading to inconsistent information
                 // in the first thread.
-                alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seq_cst);
+                alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Device{}, alpaka::onAcc::order::seqCst);
 
                 // lets see on which page we are on
                 auto const page = static_cast<uint32>(((char*) mem - (char*) _page) / pagesize);
@@ -1381,7 +1381,7 @@ namespace mallocMC
                 alpaka::onAcc::atomicOp<alpaka::operation::Add>(acc, &sharedResult, temp);
 
                 alpaka::onAcc::syncBlockThreads(acc);
-                alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Block{}, alpaka::onAcc::order::seq_cst);
+                alpaka::onAcc::memFence(acc, alpaka::onAcc::scope::Block{}, alpaka::onAcc::order::seqCst);
 
                 return sharedResult;
             }
