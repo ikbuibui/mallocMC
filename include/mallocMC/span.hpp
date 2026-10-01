@@ -66,27 +66,27 @@ namespace mallocMC
         {
         }
 
-        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto size() const -> size_t
+        [[nodiscard]] ALPAKA_FN_HOST_ACC constexpr auto size() const -> size_t
         {
             return size_;
         }
 
-        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto operator[](size_t index) const -> decltype(auto)
+        [[nodiscard]] ALPAKA_FN_HOST_ACC constexpr auto operator[](size_t index) const -> decltype(auto)
         {
             return ptr_[index];
         }
 
-        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto data() const -> decltype(auto)
+        [[nodiscard]] ALPAKA_FN_HOST_ACC constexpr auto data() const -> decltype(auto)
         {
             return ptr_;
         }
 
-        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto begin() const -> decltype(auto)
+        [[nodiscard]] ALPAKA_FN_HOST_ACC constexpr auto begin() const -> decltype(auto)
         {
             return ptr_;
         }
 
-        ALPAKA_FN_HOST_ACC [[nodiscard]] constexpr auto end() const -> decltype(auto)
+        [[nodiscard]] ALPAKA_FN_HOST_ACC constexpr auto end() const -> decltype(auto)
         {
             return &(ptr_[size_]);
         }
