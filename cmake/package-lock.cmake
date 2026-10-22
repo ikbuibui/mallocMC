@@ -4,12 +4,12 @@
 # alpaka
 CPMDeclarePackage(alpaka
   NAME alpaka
-  GIT_TAG dev
-  GITHUB_REPOSITORY alpaka-group/alpaka3
+  GIT_TAG dev_v3.x
+  GITHUB_REPOSITORY alpaka-group/alpaka
   OPTIONS
     "alpaka_CXX_STANDARD 20;alpaka_INSTALL ON"
   # It is recommended to let CPM cache dependencies in order to reduce redundant downloads.
-  # The dev branch is a moving reference; disable CPM caching so updates to its head are fetched.
+  # The dev_v3.x branch is a moving reference; disable CPM caching so updates to its head are fetched.
   NO_CACHE TRUE
 )
 # cmake-scripts
